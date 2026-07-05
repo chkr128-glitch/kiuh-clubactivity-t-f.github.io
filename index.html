@@ -1,234 +1,275 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>陸上短距離 科学的トレーニング・ダッシュボード</title>
-  <style>
-    body {
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      background-color: #f8fafc;
-      color: #333;
-      padding: 20px;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      overflow: hidden;
-    }
-    .tabs {
-      display: flex;
-      background-color: #e2e8f0;
-    }
-    .tab-button {
-      flex: 1;
-      padding: 15px 10px;
-      text-align: center;
-      cursor: pointer;
-      border: none;
-      background: none;
-      font-size: 14px;
-      font-weight: bold;
-      color: #475569;
-      transition: background 0.3s;
-    }
-    .tab-button.active {
-      background-color: #fff;
-      color: #1a365d;
-      border-bottom: 3px solid #2b6cb0;
-    }
-    .tab-content {
-      display: none;
-      padding: 20px;
-    }
-    .tab-content.active {
-      display: block;
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-      color: #2c5282;
-    }
-    input[type="number"] {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #cbd5e1;
-      border-radius: 5px;
-      box-sizing: border-box;
-      font-size: 16px;
-    }
-    button.calc-btn {
-      width: 100%;
-      padding: 12px;
-      background-color: #2b6cb0;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    button.calc-btn:hover {
-      background-color: #1a365d;
-    }
-    .result-box {
-      margin-top: 20px;
-      padding: 15px;
-      background-color: #f1f5f9;
-      border-radius: 5px;
-      text-align: center;
-    }
-    .result-value {
-      font-size: 24px;
-      font-weight: bold;
-      color: #1a365d;
-    }
-    .warning {
-      color: #e53e3e;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>コンディション管理 - 管理者画面</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* デザイン部分は前回と同じです */
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6; color: #333; margin: 0; padding: 0; line-height: 1.6; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        header { background-color: #1e3a8a; color: white; padding: 15px 20px; text-align: center; font-size: 20px; font-weight: bold; position: sticky; top: 0; z-index: 100; }
+        .card { background-color: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .section-title { font-size: 18px; font-weight: bold; color: #1e3a8a; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 15px; margin-top: 0; }
+        select { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; margin-bottom: 20px; }
+        .dashboard-summary { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .summary-card { flex: 1; min-width: 150px; background: white; border-radius: 12px; padding: 15px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 4px solid #d1d5db; }
+        .summary-title { font-size: 12px; font-weight: bold; color: #6b7280; margin-bottom: 5px; }
+        .summary-value { font-size: 28px; font-weight: bold; }
+        .alert-card { border-top-color: #dc2626; } .alert-card .summary-value { color: #dc2626; } 
+        .warning-card { border-top-color: #d97706; } .warning-card .summary-value { color: #d97706; } 
+        .info-card { border-top-color: #2563eb; } .info-card .summary-value { color: #2563eb; } 
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; font-size: 14px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { background-color: #f3f4f6; color: #4b5563; font-weight: bold; }
+        tr:hover { background-color: #f9fafb; }
+        .alert-text { color: #dc2626; font-weight: bold; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        
+        .status-badge { font-size: 12px; padding: 4px 8px; border-radius: 12px; font-weight: normal; margin-left: 10px; vertical-align: middle; }
+        .status-local { background-color: #6b7280; color: white; }
+        .status-cloud { background-color: #10b981; color: white; }
+        .sync-animation { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
 </head>
 <body>
 
-<div class="container">
-  <div class="tabs">
-    <button class="tab-button active" onclick="switchTab(event, 'srpe')">sRPE計算<br><small>(疲労度)</small></button>
-    <button class="tab-button" onclick="switchTab(event, 'rsi')">RSI計算<br><small>(バネ・神経)</small></button>
-    <button class="tab-button" onclick="switchTab(event, 'fv')">F-v簡易診断<br><small>(弱点分析)</small></button>
-  </div>
+    <header>
+        Team Condition <span id="connection-status" class="status-badge status-local">ローカルモード</span>
+    </header>
 
-  <div id="srpe" class="tab-content active">
-    <h3>sRPE（セッションRPE）計算</h3>
-    <div class="form-group">
-      <label>練習のきつさ (1〜10)</label>
-      <input type="number" id="srpe-intensity" min="1" max="10" placeholder="例: 7">
-    </div>
-    <div class="form-group">
-      <label>練習時間 (分)</label>
-      <input type="number" id="srpe-time" min="1" placeholder="例: 120">
-    </div>
-    <button class="calc-btn" onclick="calcSRPE()">計算する</button>
-    <div class="result-box" id="srpe-result-box" style="display:none;">
-      <div>sRPEスコア: <span class="result-value" id="srpe-score"></span></div>
-      <div id="srpe-warning" class="warning"></div>
-    </div>
-  </div>
+    <div class="container">
+        <div class="flex-between">
+            <h2 style="color: #1e3a8a; margin-top: 0;">本日のチーム状況</h2>
+        </div>
+        
+        <!-- サマリー -->
+        <div class="dashboard-summary">
+            <div class="summary-card alert-card">
+                <div class="summary-title">本日: 疲労度高(8以上)</div>
+                <div class="summary-value" id="summary-fatigue">0 名</div>
+            </div>
+            <div class="summary-card warning-card">
+                <div class="summary-title">本日: 睡眠不足(6h未満)</div>
+                <div class="summary-value" id="summary-sleep">0 名</div>
+            </div>
+            <div class="summary-card info-card">
+                <div class="summary-title">本日の入力完了者</div>
+                <div class="summary-value" id="summary-today">0 名</div>
+            </div>
+        </div>
 
-  <div id="rsi" class="tab-content">
-    <h3>RSI（反応筋力指数）計算</h3>
-    <div class="form-group">
-      <label>ジャンプ滞空時間 (秒)</label>
-      <input type="number" id="rsi-air" step="0.01" placeholder="例: 0.45">
-    </div>
-    <div class="form-group">
-      <label>接地時間 (秒)</label>
-      <input type="number" id="rsi-ground" step="0.01" placeholder="例: 0.20">
-    </div>
-    <button class="calc-btn" onclick="calcRSI()">計算する</button>
-    <div class="result-box" id="rsi-result-box" style="display:none;">
-      <div>RSIスコア: <span class="result-value" id="rsi-score"></span></div>
-      <div id="rsi-eval" style="margin-top:10px; font-weight:bold;"></div>
-    </div>
-  </div>
+        <!-- グラフ -->
+        <div class="card">
+            <h3 class="section-title">選手別 推移グラフ</h3>
+            <select id="chart-player-select" onchange="updateAdminUI(globalLogs)"></select>
+            <div style="margin-bottom: 40px;"><canvas id="loadChart"></canvas></div>
+            <div><canvas id="rsiChart"></canvas></div>
+        </div>
 
-  <div id="fv" class="tab-content">
-    <h3>F-v（力-速度）簡易診断</h3>
-    <div class="form-group">
-      <label>30mブロックスタートタイム (秒)</label>
-      <input type="number" id="fv-30m" step="0.01" placeholder="例: 4.50">
+        <!-- テーブル -->
+        <div class="card table-responsive">
+            <h3 class="section-title">全データ一覧履歴</h3>
+            <table id="admin-table">
+                <thead>
+                    <tr>
+                        <th>日付</th>
+                        <th>選手名</th>
+                        <th>疲労度</th>
+                        <th>Load (sRPE)</th>
+                        <th>RSI</th>
+                        <th>F-v診断</th>
+                        <th>睡眠 (h)</th>
+                        <th>ケガ・違和感</th>
+                    </tr>
+                </thead>
+                <tbody><!-- JavaScriptで挿入 --></tbody>
+            </table>
+        </div>
     </div>
-    <div class="form-group">
-      <label>Fly-in 20m 最高速タイム (秒)</label>
-      <input type="number" id="fv-20m" step="0.01" placeholder="例: 2.05">
-    </div>
-    <button class="calc-btn" onclick="calcFV()">診断する</button>
-    <div class="result-box" id="fv-result-box" style="display:none;">
-      <div>比率: <span class="result-value" id="fv-ratio"></span></div>
-      <div id="fv-eval" style="margin-top:10px; font-weight:bold; color:#2c5282;"></div>
-    </div>
-  </div>
-</div>
 
-<script>
-  function switchTab(evt, tabName) {
-    let tabContents = document.getElementsByClassName("tab-content");
-    for (let i = 0; i < tabContents.length; i++) {
-      tabContents[i].classList.remove("active");
-    }
-    let tabButtons = document.getElementsByClassName("tab-button");
-    for (let i = 0; i < tabButtons.length; i++) {
-      tabButtons[i].classList.remove("active");
-    }
-    document.getElementById(tabName).classList.add("active");
-    evt.currentTarget.classList.add("active");
-  }
+    <!-- Firebaseのプログラム -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-  function calcSRPE() {
-    let intensity = document.getElementById('srpe-intensity').value;
-    let time = document.getElementById('srpe-time').value;
-    if(intensity && time) {
-      let score = intensity * time;
-      document.getElementById('srpe-score').innerText = score;
-      let warningEl = document.getElementById('srpe-warning');
-      if(score > 600) {
-        warningEl.innerText = 'スパイク注意：オーバーワークの兆候です。翌週の負荷を下げることを推奨します。';
-        warningEl.style.color = '#e53e3e';
-      } else {
-        warningEl.innerText = '適正範囲内です。日々の推移をモニタリングしましょう。';
-        warningEl.style.color = '#2b6cb0';
-      }
-      document.getElementById('srpe-result-box').style.display = 'block';
-    }
-  }
+        // ==========================================
+        // ★ player.html と全く同じ設定をここに貼り付けます ★
+        // ==========================================
+        const myFirebaseConfig = {
+    apiKey: "AIzaSyAQoESOlZIGJfOgfIwpkL0r0YcYu4tl8ZQ",
+    authDomain: "team-conditioning-controling.firebaseapp.com",
+    projectId: "team-conditioning-controling",
+    storageBucket: "team-conditioning-controling.firebasestorage.app",
+    messagingSenderId: "330203393971",
+    appId: "1:330203393971:web:f47b8e66137d0fce8b65c6",
+    measurementId: "G-SCMMTXKZ37"
+  };
+        // ==========================================
 
-  function calcRSI() {
-    let air = document.getElementById('rsi-air').value;
-    let ground = document.getElementById('rsi-ground').value;
-    if(air && ground && ground > 0) {
-      let score = (air / ground).toFixed(2);
-      document.getElementById('rsi-score').innerText = score;
-      let evalEl = document.getElementById('rsi-eval');
-      if(score < 1.5) {
-        evalEl.innerText = '評価: バネの疲労大・または基礎強化が必要です。';
-        evalEl.style.color = '#e53e3e';
-      } else if(score >= 1.5 && score <= 2.0) {
-        evalEl.innerText = '評価: 標準的です。';
-        evalEl.style.color = '#d69e2e';
-      } else {
-        evalEl.innerText = '評価: バネ良好！高神経刺激（最高速度練習など）が可能です。';
-        evalEl.style.color = '#38a169';
-      }
-      document.getElementById('rsi-result-box').style.display = 'block';
-    }
-  }
+        window.globalLogs = []; // アプリ全体で使うデータ
+        let loadChartInstance = null;
+        let rsiChartInstance = null;
 
-  function calcFV() {
-    let t30 = document.getElementById('fv-30m').value;
-    let t20 = document.getElementById('fv-20m').value;
-    if(t30 && t20 && t20 > 0) {
-      let ratio = (t30 / t20).toFixed(2);
-      document.getElementById('fv-ratio').innerText = ratio;
-      let evalEl = document.getElementById('fv-eval');
-      if(ratio > 2.3) {
-        evalEl.innerText = '【力不足型 (Force Deficit)】\nおすすめ: 重いソリ引き、高重量スクワットで初期加速を改善しましょう。';
-      } else if(ratio < 2.1) {
-        evalEl.innerText = '【速度不足型 (Velocity Deficit)】\nおすすめ: アシスト走、バウンディングでトップスピードを改善しましょう。';
-      } else {
-        evalEl.innerText = '【バランス型 (Balanced)】\n力と速度のバランスが良い状態です。現在のトレーニングを継続しましょう。';
-      }
-      document.getElementById('fv-result-box').style.display = 'block';
-    }
-  }
-</script>
+        async function initFirebase() {
+            let colRef = null;
 
+            if (typeof __firebase_config !== 'undefined') {
+                const app = initializeApp(JSON.parse(__firebase_config));
+                const db = getFirestore(app);
+                const auth = getAuth(app);
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default';
+                colRef = collection(db, 'artifacts', appId, 'public', 'data', 'team_condition_logs');
+                document.getElementById('connection-status').innerHTML = 'クラウド同期中 <span class="sync-animation">🟢</span>';
+                document.getElementById('connection-status').className = 'status-badge status-cloud';
+            } else if (myFirebaseConfig.apiKey !== "API_KEY") {
+                const app = initializeApp(myFirebaseConfig);
+                const db = getFirestore(app);
+                colRef = collection(db, 'team_condition_logs');
+                document.getElementById('connection-status').innerHTML = 'クラウド同期中 <span class="sync-animation">🟢</span>';
+                document.getElementById('connection-status').className = 'status-badge status-cloud';
+            } else {
+                // ローカルモード
+                const logs = JSON.parse(localStorage.getItem('team_condition_logs') || '[]');
+                window.globalLogs = logs;
+                updateAdminUI(logs);
+                return;
+            }
+
+            // クラウドモードの場合：データが変わった瞬間に自動で画面を書き換える魔法の関数（onSnapshot）
+            if (colRef) {
+                onSnapshot(colRef, (snapshot) => {
+                    const logs = [];
+                    snapshot.forEach(doc => logs.push(doc.data()));
+                    // 日付順に並び替え
+                    logs.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+                    window.globalLogs = logs;
+                    updateAdminUI(logs); // 画面を更新！
+                }, (error) => {
+                    console.error("データ取得エラー:", error);
+                });
+            }
+        }
+
+        // --- 画面を最新のデータに書き換える関数 ---
+        window.updateAdminUI = function(logs) {
+            updateDashboardSummary(logs);
+            updatePlayerSelect(logs);
+            updateCharts(logs);
+            renderAdminTable(logs);
+        };
+
+        function getTodayString() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function updateDashboardSummary(logs) {
+            const todayStr = getTodayString();
+            const todayLogs = logs.filter(log => log.date === todayStr);
+            
+            document.getElementById('summary-today').textContent = `${todayLogs.length} 名`;
+            document.getElementById('summary-fatigue').textContent = `${todayLogs.filter(log => parseInt(log.fatigue) >= 8).length} 名`;
+            document.getElementById('summary-sleep').textContent = `${todayLogs.filter(log => parseFloat(log.sleep) < 6).length} 名`;
+        }
+
+        function updatePlayerSelect(logs) {
+            const select = document.getElementById('chart-player-select');
+            const currentVal = select.value; 
+            const players = [...new Set(logs.map(log => log.playerName).filter(name => name))];
+
+            select.innerHTML = '<option value="">選手を選択してください</option>';
+            players.forEach(player => {
+                const option = document.createElement('option');
+                option.value = player;
+                option.textContent = player;
+                if (player === currentVal) option.selected = true;
+                select.appendChild(option);
+            });
+
+            if (!select.value && players.length > 0) select.value = players[0];
+        }
+
+        function updateCharts(logs) {
+            if (typeof Chart === 'undefined') return; 
+            const select = document.getElementById('chart-player-select');
+            const playerName = select.value;
+            if (!playerName) return;
+
+            const playerLogs = logs.filter(log => log.playerName === playerName);
+            const labels = playerLogs.map(log => log.date ? log.date.substring(5) : '不明'); 
+            const loadData = playerLogs.map(log => parseFloat(log.trainingLoad) || 0);
+            const fatigueData = playerLogs.map(log => parseFloat(log.fatigue) || 0);
+            const rsiData = playerLogs.map(log => parseFloat(log.rsi) || 0);
+
+            const ctxLoad = document.getElementById('loadChart').getContext('2d');
+            if (loadChartInstance) loadChartInstance.destroy(); 
+            loadChartInstance = new Chart(ctxLoad, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Training Load (左軸)', data: loadData, borderColor: '#2563eb', backgroundColor: '#2563eb', yAxisID: 'y' },
+                        { label: '疲労度 (右軸)', data: fatigueData, borderColor: '#dc2626', backgroundColor: '#dc2626', borderDash: [5, 5], yAxisID: 'y1' }
+                    ]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Training Load と 疲労度の推移' } }, scales: { y: { beginAtZero: true }, y1: { position: 'right', min: 0, max: 10, grid: { drawOnChartArea: false } } } }
+            });
+
+            const ctxRsi = document.getElementById('rsiChart').getContext('2d');
+            if (rsiChartInstance) rsiChartInstance.destroy();
+            rsiChartInstance = new Chart(ctxRsi, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{ label: 'RSI (反応筋力)', data: rsiData, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.2)', fill: true, tension: 0.2 }]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'RSI (バネの強さ) の推移' } }, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        function renderAdminTable(logs) {
+            const tableBody = document.querySelector('#admin-table tbody');
+            tableBody.innerHTML = '';
+            if (logs.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center;">まだ記録がありません。</td></tr>';
+                return;
+            }
+            
+            // 新しいデータが上に来るように逆順
+            const displayLogs = [...logs].reverse();
+            
+            displayLogs.forEach(function(log) {
+                const tr = document.createElement('tr');
+                const fatigueText = (parseInt(log.fatigue) >= 8) ? `<span class="alert-text">${log.fatigue} ⚠️</span>` : (log.fatigue || '-');
+                tr.innerHTML = `
+                    <td>${log.date || ''}</td>
+                    <td style="font-weight:bold;">${log.playerName || ''}</td>
+                    <td>${fatigueText}</td>
+                    <td>${log.trainingLoad && log.trainingLoad !== '-' ? log.trainingLoad : ''}</td>
+                    <td>${log.rsi && log.rsi !== '-' ? log.rsi : ''}</td>
+                    <td style="font-size:12px;">${log.fvResult && log.fvResult !== '-' ? log.fvResult : ''}</td>
+                    <td>${log.sleep || ''}</td>
+                    <td style="color:#dc2626;">${log.injury || ''}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // アプリ起動
+        initFirebase();
+    </script>
 </body>
 </html>
